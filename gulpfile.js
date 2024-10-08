@@ -2,7 +2,8 @@ const gulp = require('gulp');
 const concat = require('gulp-concat-css');
 const plumber = require('gulp-plumber');
 const del = require('del');
-const { stream } = require('browser-sync');
+const postcss = require('gulp-postcss');
+const autoprefixer = require('autoprefixer');
 const browserSync = require('browser-sync').create();
 const build = gulp.series(clean, gulp.parallel(html, css, fonts, images));
 
@@ -14,9 +15,13 @@ function html() {
 }
 
 function css() {
+    const plugins = [
+        autoprefixer()
+    ];
     return gulp.src('src/styles/**/*.css')
     .pipe(plumber())
     .pipe(concat('bundle.css'))
+    .pipe(postcss(plugins))
     .pipe(gulp.dest('dist/'))
     .pipe(browserSync.reload({stream: true}));
 }
