@@ -4,19 +4,39 @@ const plumber = require('gulp-plumber');
 const del = require('del');
 const postcss = require('gulp-postcss');
 const autoprefixer = require('autoprefixer');
+const mediaquery = require('postcss-combine-media-query');
+const cssnano = require('cssnano');
+const htmlMinify = require('html-minifier');
 const browserSync = require('browser-sync').create();
 const build = gulp.series(clean, gulp.parallel(html, css, fonts, images));
 
 function html() {
+    const options = {
+        removeComments: true,
+        removeRedundantAttributes: true,
+        removeScriptTypeAttributes: true,
+        removeStyleLinkTypeAttributes: true,
+        sortClassName: true,
+        useShortDoctype: true,
+        collapseWhitespace: true,
+        minifyCSS: true,
+        keepClosingSlash: true
+    };
     return gulp.src('src/**/*.html')
         .pipe(plumber())
+        .on('data', function(file) {
+            const buferFile = Buffer.from(htmlMinify.minify(file.contents.toString(), options))
+            return file.contents = buferFile
+        })
         .pipe(gulp.dest('dist/'))
         .pipe(browserSync.reload({stream: true}));
 }
 
 function css() {
     const plugins = [
-        autoprefixer()
+        autoprefixer(),
+        mediaquery(),
+        cssnano()
     ];
     return gulp.src('src/styles/**/*.css')
     .pipe(plumber())
