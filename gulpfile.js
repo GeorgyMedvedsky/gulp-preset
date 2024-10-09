@@ -6,9 +6,11 @@ const postcss = require('gulp-postcss');
 const autoprefixer = require('autoprefixer');
 const mediaquery = require('postcss-combine-media-query');
 const cssnano = require('cssnano');
+const sass = require('gulp-sass')(require('sass'));
+const sassGlob = require('gulp-sass-glob');
 const htmlMinify = require('html-minifier');
 const browserSync = require('browser-sync').create();
-const build = gulp.series(clean, gulp.parallel(html, css, fonts, images));
+const build = gulp.series(clean, gulp.parallel(html, styles, fonts, images));
 
 function html() {
     const options = {
@@ -32,18 +34,28 @@ function html() {
         .pipe(browserSync.reload({stream: true}));
 }
 
-function css() {
+function styles() {
     const plugins = [
         autoprefixer(),
         mediaquery(),
         cssnano()
     ];
-    return gulp.src('src/styles/**/*.css')
-    .pipe(plumber())
-    .pipe(concat('bundle.css'))
-    .pipe(postcss(plugins))
-    .pipe(gulp.dest('dist/'))
-    .pipe(browserSync.reload({stream: true}));
+    return gulp.src('src/styles/**/*.{scss, sass}')
+      .pipe(sassGlob())
+      .pipe(sass().on('error', sass.logError))
+      .pipe(concat('index.css'))
+      .pipe(postcss(plugins))
+      .pipe(gulp.dest('dist/'))
+      .pipe(browserSync.reload({stream: true}));
+
+    // Настройка для *.css
+
+    // return gulp.src('src/styles/**/*.css')
+    // .pipe(plumber())
+    // .pipe(concat('index.css'))
+    // .pipe(postcss(plugins))
+    // .pipe(gulp.dest('dist/'))
+    // .pipe(browserSync.reload({stream: true}));
 }
 
 function images() {
@@ -64,7 +76,7 @@ function clean() {
 
 function watchFiles() {
     gulp.watch(['src/**/*.html'], html);
-    gulp.watch(['src/styles/**/*.css'], css);
+    gulp.watch(['src/styles/**/*.{scss, sass}'], styles);
     gulp.watch(['src/images/**/*.{jpg, svg, png, gif, avif, webp, ico}'], images);
     gulp.watch(['src/fonts/*.{woff, woff2, ttf}'], fonts);
 }
@@ -80,7 +92,7 @@ function serve() {
 const watchapp = gulp.parallel(build, watchFiles, serve);
 
 exports.html = html;
-exports.css = css;
+exports.styles = styles;
 exports.images = images;
 exports.fonts = fonts;
 exports.clean = clean;
